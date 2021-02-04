@@ -20,6 +20,7 @@ io.on('connection', (client) => {
         let personas = usuarios.agregarPersona( client.id, usuario.nombre, usuario.sala );
 
         client.broadcast.to(usuario.sala).emit('listaPersonas', usuarios.getPersonasPorSala(usuario.sala));
+        client.broadcast.to(usuario.sala).emit('crearMensaje', crearMensaje('Admin', `${usuario.nombre} entró al chat`));
         callback({
             ok: true,
             personas: usuarios.getPersonasPorSala(usuario.sala)
@@ -27,17 +28,19 @@ io.on('connection', (client) => {
 
     });
 
-    client.on('crearMensaje', data => {
+    client.on('crearMensaje', (data,callback) => {
         let persona = usuarios.getPersona(client.id);
         let mensaje = crearMensaje(persona.nombre, data.mensaje);
-        client.broadcast.to(persona.sala).emit('crearMensaje', mensaje)
+        client.broadcast.to(persona.sala).emit('crearMensaje', mensaje);
+
+        callback(mensaje);
     });
 
     client.on('disconnect', () => {
         let personaBorrada = usuarios.borrarPersona( client.id );
-        let message = `${personaBorrada.nombre} has left the room`;
+        let message = `${personaBorrada.nombre} salió de la sala`;
 
-        client.broadcast.to(personaBorrada.sala).emit('crearMensaje', crearMensaje('Admin', `${personaBorrada.nombre} has left the chat`));
+        client.broadcast.to(personaBorrada.sala).emit('crearMensaje', crearMensaje('Admin', `${personaBorrada.nombre} salió del chat`));
         client.broadcast.to(personaBorrada.sala).emit('listaPersonas', usuarios.getPersonasPorSala(personaBorrada.sala));
     });
 
